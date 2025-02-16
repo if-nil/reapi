@@ -1,5 +1,8 @@
-
-![ReAPI](docs/image/logo.svg)
+<p align="center">
+  <a href="https://github.com/if-nil/reapi" target="_blank" rel="noopener noreferrer">
+    <img width="180" src="https://raw.githubusercontent.com/if-nil/reapi/refs/heads/master/docs/image/logo.svg" alt="ReAPI logo">
+  </a>
+</p>
 
 English | [中文](README_ZH.md)
 
