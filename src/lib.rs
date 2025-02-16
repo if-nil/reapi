@@ -123,7 +123,6 @@ async fn index() -> Html<&'static str> {
 }
 
 async fn favicon() -> Vec<u8> {
-    println!("favicon {:?}", RAW_ICON.len());
     RAW_ICON.to_vec()
 }
 
