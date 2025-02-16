@@ -12,12 +12,8 @@ use redis_module::{
 use serde::Serialize;
 use serde_json::json;
 
-use std::thread;
+use std::{collections::HashMap, thread};
 use tokio::runtime::Runtime;
-
-trait ToJson {
-    fn to_json(&self) -> serde_json::Value;
-}
 
 const RAW_HTML: &str = include_str!("index.html");
 const RAW_ICON: &[u8] = include_bytes!("favicon.ico");
@@ -39,6 +35,11 @@ struct ResponseData {
     result: RedisValue,
 }
 
+// 将 RedisValue 和 RedisValueKey 转换为 JSON
+trait ToJson {
+    fn to_json(&self) -> serde_json::Value;
+}
+
 impl ToJson for RedisValueKey {
     fn to_json(&self) -> serde_json::Value {
         match self {
@@ -53,6 +54,7 @@ impl ToJson for RedisValueKey {
         }
     }
 }
+
 impl ToJson for RedisValue {
     fn to_json(&self) -> serde_json::Value {
         match self {
@@ -107,15 +109,22 @@ fn serialize_redis_value<S>(value: &RedisValue, serializer: S) -> Result<S::Ok, 
 where
     S: serde::Serializer,
 {
-    // 使用之前实现的 to_json 方法
-    let json_value: serde_json::Value = value.to_json();
-    json_value.serialize(serializer)
+    value.to_json().serialize(serializer)
 }
 
 impl IntoResponse for ResponseData {
     fn into_response(self) -> Response {
         Json(self).into_response()
     }
+}
+
+async fn index() -> Html<&'static str> {
+    Html(RAW_HTML)
+}
+
+async fn favicon() -> Vec<u8> {
+    println!("favicon {:?}", RAW_ICON.len());
+    RAW_ICON.to_vec()
 }
 
 async fn command(Path(path): Path<String>) -> Result<ResponseData, ErrorResponse> {
@@ -142,25 +151,44 @@ async fn command(Path(path): Path<String>) -> Result<ResponseData, ErrorResponse
     }
 }
 
-async fn index() -> Html<&'static str> {
-    Html(RAW_HTML)
+fn parse_args(args: Vec<String>) -> Result<HashMap<String, String>, anyhow::Error> {
+    let mut config = HashMap::new();
+
+    // 遍历参数，每两个一组提取键值对
+    let mut iter = args.into_iter();
+    while let Some(key) = iter.next() {
+        if let Some(value) = iter.next() {
+            config.insert(key, value);
+        } else {
+            return Err(anyhow::anyhow!("参数不完整: 缺少键 `{}` 对应的值", key));
+        }
+    }
+    Ok(config)
 }
 
-async fn favicon() -> Vec<u8> {
-    println!("favicon {:?}", RAW_ICON.len());
-    RAW_ICON.to_vec()
-}
-
-fn start_server() -> Result<(), anyhow::Error> {
+fn start_server(args: Vec<String>) -> Result<(), anyhow::Error> {
     let app = Router::<()>::new()
         .route("/favicon.ico", get(favicon))
         .route("/", get(index))
         .route("/index.html", get(index))
         .route("/{*path}", get(command));
 
+    let config = parse_args(args)?;
+    let default_host = String::from("127.0.0.1");
+    let default_port = String::from("9098");
+    let reapi_host = config.get("reapi_host").unwrap_or(&default_host);
+    let reapi_port = config.get("reapi_port").unwrap_or(&default_port);
+
+    // 打印启动信息
+    let addr = format!("{}:{}", reapi_host, reapi_port);
+    let thread_ctx = ThreadSafeContext::new();
+    let ctx = thread_ctx.lock();
+    ctx.log_notice(format!("ReApi Server 启动中... {}", addr).as_str());
+    drop(ctx);
+
     let rt = Runtime::new()?;
     rt.block_on(async {
-        let listener = tokio::net::TcpListener::bind("0.0.0.0:9098").await?;
+        let listener = tokio::net::TcpListener::bind(&addr).await?;
         axum::serve(listener, app)
             .await
             .map_err(|e| anyhow::Error::from(e))
@@ -169,15 +197,10 @@ fn start_server() -> Result<(), anyhow::Error> {
 }
 
 fn init(_ctx: &Context, _args: &[RedisString]) -> Status {
-    _ctx.log_notice(
-        format!(
-            "ReApi Server 启动中... {:?}",
-            _args.iter().map(|s| s.to_string()).collect::<Vec<String>>()
-        )
-        .as_str(),
-    );
+    let args = _args.iter().map(|s| s.to_string()).collect::<Vec<String>>();
+    _ctx.log_notice(format!("ReApi Server 启动参数: {:?}", args).as_str());
     thread::spawn(move || {
-        if let Err(e) = start_server() {
+        if let Err(e) = start_server(args) {
             let thread_ctx = ThreadSafeContext::new();
             let ctx = thread_ctx.lock();
             ctx.log_warning(format!("ReApi Server 启动失败: {}", e).as_str());
