@@ -50,3 +50,5 @@ curl http://127.0.0.1:9098/hset/myhash/field1/value1
 ### Web界面
 
 访问 `http://127.0.0.1:9098` 可以使用内置的Web控制台。
+
+[![](docs/image/web.png)](docs/image/web.png)

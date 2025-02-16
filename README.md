@@ -51,3 +51,5 @@ curl http://127.0.0.1:9098/hset/myhash/field1/value1
 ### Web Interface
 
 Visit `http://127.0.0.1:9098` to use the built-in web console.
+
+[![](docs/image/web.png)](docs/image/web.png)
