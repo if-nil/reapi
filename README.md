@@ -30,6 +30,20 @@ cargo build --release
 redis-server --loadmodule /path/to/libreapi.so
 ```
 
+## Configuration Parameters
+
+When loading the module, you can specify the following parameters:
+
+```shell
+redis-server --loadmodule /path/to/libreapi.so reapi_host 127.0.0.1 reapi_port 9098
+```
+
+| Parameter | Description | Default Value |
+|-----------|-------------|---------------|
+| reapi_host | The host address that ReAPI server will bind to | 127.0.0.1 |
+| reapi_port | The port number that ReAPI server will listen on | 9098 |
+
+
 ## Usage Examples
 
 ### HTTP API

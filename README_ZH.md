@@ -29,6 +29,21 @@ cargo build --release
 ```shell
 redis-server --loadmodule /path/to/libreapi.so
 ```
+
+## 配置参数
+
+加载模块时，你可以指定以下参数：
+
+```shell
+redis-server --loadmodule /path/to/libreapi.so reapi_host 127.0.0.1 reapi_port 9098
+```
+
+| 参数 | 说明 | 默认值 |
+|-----------|-------------|---------------|
+| reapi_host | ReAPI 服务器绑定的主机地址 | 127.0.0.1 |
+| reapi_port | ReAPI 服务器监听的端口号 | 9098 |
+
+
 ## 使用示例
 
 ### HTTP API
