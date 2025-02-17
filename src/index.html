@@ -88,7 +88,7 @@
               let result = document.createElement("LI");
               let cmdSpan = document.createElement("span");
               cmdSpan.style.color = "#666";
-              cmdSpan.textContent = "> " + cmd + "\n";
+              cmdSpan.textContent = `[DB ${dbIndex}] > ${cmd}\n`;
               let responseSpan = document.createElement("span");
               responseSpan.style.color = data.error ? "#c0271c" : "#000";
               responseSpan.textContent = data.result || data.error;
