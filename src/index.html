@@ -73,6 +73,37 @@
       }
     </style>
     <script type="text/javascript">
+      function splitCommand(cmd) {
+        // 拆分命令
+        let parts = [];
+        let word = "";
+        let inWord = false;
+
+        for (let i = 0; i < cmd.length; i++) {
+          if (cmd[i] === " " && !inWord) {
+            // 如果当前字符是空格且不在单词中，则将单词推入结果数组，并清空单词
+            word.length > 0 && parts.push(word) && (word = "");
+          } else if (
+            cmd[i] === "\\" &&
+            cmd.length > i + 1 &&
+            cmd[i + 1] === '"'
+          ) {
+            // 如果当前是\"，则将"推入单词，并跳过下一个字符
+            word += cmd[i + 1];
+            i++;
+          } else if (cmd[i] === '"') {
+            // 如果当前是"，则将单词推入结果数组，并切换单词状态
+            word.length > 0 && parts.push(word) && (word = "");
+            inWord = !inWord;
+          } else {
+            // 如果当前字符不是空格、\"或"，则将字符推入单词
+            word += cmd[i];
+          }
+        }
+        // 将最后一个单词推入结果数组
+        word.length > 0 && parts.push(word);
+        return parts;
+      }
       function command() {
         let input = document.getElementById("cli");
         let dbIndex = document.getElementById("dbSelect").value;
@@ -80,7 +111,8 @@
         if (!cmd.trim()) return;
 
         const path = dbIndex === "0" ? cmd : `${dbIndex}/${cmd}`;
-        const parts = path.match(/\w+|"[^"]+"/g);
+        // 每个字符进行匹配
+        let parts = splitCommand(path);
         if (parts) {
           fetch(parts.join("/"))
             .then((res) => res.json())
