@@ -49,14 +49,22 @@ redis-server --loadmodule /path/to/libreapi.so reapi_host 127.0.0.1 reapi_port 9
 ### HTTP API
 
 ```shell
-# Set key-value
+# Set key-value in default database (DB 0)
 curl http://127.0.0.1:9098/set/mykey/hello
+{"result":"OK"}
+
+# Set key-value in database 1
+curl http://127.0.0.1:9098/1/set/mykey/hello
 {"result":"OK"}
 ```
 
 ```shell
-# Get value
+# Get value from default database (DB 0)
 curl http://127.0.0.1:9098/get/mykey
+{"result":"hello"}
+
+# Get value from database 1
+curl http://127.0.0.1:9098/1/get/mykey
 {"result":"hello"}
 ```
 
@@ -67,6 +75,9 @@ curl http://127.0.0.1:9098/hset/myhash/field1/value1
 
 ### Web Interface
 
-Visit `http://127.0.0.1:9098` to use the built-in web console.
+Visit `http://127.0.0.1:9098` to use the built-in web console. You can:
+- Input Redis commands in the command line
+- Select database (DB 0-15) from the dropdown menu
+- Execute commands and see results in real-time
 
 [![](docs/image/web.png)](docs/image/web.png)

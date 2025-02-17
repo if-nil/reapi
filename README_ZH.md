@@ -49,14 +49,22 @@ redis-server --loadmodule /path/to/libreapi.so reapi_host 127.0.0.1 reapi_port 9
 ### HTTP API
 
 ```shell
-# 设置键值
+# 在默认数据库（DB 0）中设置键值
 curl http://127.0.0.1:9098/set/mykey/hello
+{"result":"OK"}
+
+# 在数据库 1 中设置键值
+curl http://127.0.0.1:9098/1/set/mykey/hello
 {"result":"OK"}
 ```
 
 ```shell
-# 获取键值
+# 从默认数据库（DB 0）中获取值
 curl http://127.0.0.1:9098/get/mykey
+{"result":"hello"}
+
+# 从数据库 1 中获取值
+curl http://127.0.0.1:9098/1/get/mykey
 {"result":"hello"}
 ```
 
@@ -65,8 +73,11 @@ curl http://127.0.0.1:9098/get/mykey
 curl http://127.0.0.1:9098/hset/myhash/field1/value1
 ```
 
-### Web界面
+### Web 界面
 
-访问 `http://127.0.0.1:9098` 可以使用内置的Web控制台。
+访问 `http://127.0.0.1:9098` 使用内置的 Web 控制台。你可以：
+- 在命令行中输入 Redis 命令
+- 从下拉菜单中选择数据库（DB 0-15）
+- 执行命令并实时查看结果
 
 [![](docs/image/web.png)](docs/image/web.png)
