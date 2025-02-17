@@ -22,6 +22,8 @@ jobs:
             artifact_name: macos-libs
 
     steps:
+      - name: Add Rust Target
+        run: rustup target add ${{ matrix.target }}
       - name: Checkout code
         uses: actions/checkout@v4
 
