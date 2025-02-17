@@ -1,0 +1,79 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - "v*" # 通过语义化版本标签触发 (例如 v1.0.0)
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            lib_ext: so
+            artifact_name: linux-libs
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            lib_ext: dylib
+            artifact_name: macos-libs
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: actions-rust-lang/setup-rust@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+          components: rustc, cargo
+
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build release
+        run: cargo build --release --target ${{ matrix.target }} --lib
+
+      - name: Prepare artifacts
+        run: |
+          mkdir -p artifacts
+          # 复制动态库文件并添加平台前缀
+          find target/${{ matrix.target }}/release -maxdepth 1 -type f \
+            \( -name "lib*.${{ matrix.lib_ext }}" -o -name "lib*.a" \) \
+            -exec cp {} artifacts \;
+          cd artifacts && for f in *; do mv "$f" "${{ matrix.artifact_name }}-${f}"; done
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: artifacts/
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: release-artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          files: |
+            release-artifacts/**/*
