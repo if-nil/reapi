@@ -5,6 +5,7 @@ use axum::{
     routing::get,
     Router,
 };
+use redis_module::redisraw::bindings::RedisModule_SelectDb;
 use redis_module::{
     redis_module, redisvalue::RedisValueKey, Context, RedisString, RedisValue, Status,
     ThreadSafeContext,
@@ -127,11 +128,25 @@ async fn favicon() -> Vec<u8> {
 }
 
 async fn command(Path(path): Path<String>) -> Result<ResponseData, ErrorResponse> {
-    let args = path.split("/").collect::<Vec<&str>>();
+    let mut args = path.split("/").collect::<Vec<&str>>();
+    let mut db = 0;
+    if let Ok(index) = args[0].parse::<u64>() {
+        db = index;
+        args.remove(0);
+    }
+
     let thread_ctx = ThreadSafeContext::new();
 
     let ctx = thread_ctx.lock();
     ctx.log_notice(format!("command: {:?}", args).as_str());
+
+    if db > 0 && unsafe { RedisModule_SelectDb.unwrap()(ctx.ctx, db as i32) } != 0 {
+        drop(ctx);
+        return Err(ErrorResponse {
+            error: format!("切换数据库 {} 失败", db),
+            code: StatusCode::BAD_REQUEST,
+        });
+    }
     let result = ctx.call(args[0], &args[1..]);
     drop(ctx);
 

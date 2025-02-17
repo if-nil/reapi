@@ -63,33 +63,45 @@
         white-space: pre-wrap;
         word-break: break-all;
       }
+      select {
+        background-color: white;
+        font-size: 14px;
+      }
+      select:focus {
+        outline: none;
+        border-color: #c0271c;
+      }
     </style>
     <script type="text/javascript">
       function command() {
         let input = document.getElementById("cli");
+        let dbIndex = document.getElementById("dbSelect").value;
         let cmd = input.value;
         if (!cmd.trim()) return;
 
-        const path = cmd.match(/\w+|"[^"]+"/g).join("/");
-        fetch(path)
-          .then((res) => res.json())
-          .then((data) => {
-            let result = document.createElement("LI");
-            let cmdSpan = document.createElement("span");
-            cmdSpan.style.color = "#666";
-            cmdSpan.textContent = "> " + cmd + "\n";
-            let responseSpan = document.createElement("span");
-            responseSpan.style.color = data.error ? "#c0271c" : "#000";
-            responseSpan.textContent = data.result || data.error;
+        const path = dbIndex === "0" ? cmd : `${dbIndex}/${cmd}`;
+        const parts = path.match(/\w+|"[^"]+"/g);
+        if (parts) {
+          fetch(parts.join("/"))
+            .then((res) => res.json())
+            .then((data) => {
+              let result = document.createElement("LI");
+              let cmdSpan = document.createElement("span");
+              cmdSpan.style.color = "#666";
+              cmdSpan.textContent = "> " + cmd + "\n";
+              let responseSpan = document.createElement("span");
+              responseSpan.style.color = data.error ? "#c0271c" : "#000";
+              responseSpan.textContent = data.result || data.error;
 
-            result.appendChild(cmdSpan);
-            result.appendChild(responseSpan);
+              result.appendChild(cmdSpan);
+              result.appendChild(responseSpan);
 
-            let results = document.getElementById("results");
-            results.insertBefore(result, results.firstChild);
+              let results = document.getElementById("results");
+              results.insertBefore(result, results.firstChild);
 
-            input.value = "";
-          });
+              input.value = "";
+            });
+        }
         return false;
       }
     </script>
@@ -122,6 +134,32 @@
           placeholder="输入 Redis 命令..."
           autocomplete="off"
         />
+        <select
+          id="dbSelect"
+          style="
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin: 0 10px;
+          "
+        >
+          <option value="0">DB 0</option>
+          <option value="1">DB 1</option>
+          <option value="2">DB 2</option>
+          <option value="3">DB 3</option>
+          <option value="4">DB 4</option>
+          <option value="5">DB 5</option>
+          <option value="6">DB 6</option>
+          <option value="7">DB 7</option>
+          <option value="8">DB 8</option>
+          <option value="9">DB 9</option>
+          <option value="10">DB 10</option>
+          <option value="11">DB 11</option>
+          <option value="12">DB 12</option>
+          <option value="13">DB 13</option>
+          <option value="14">DB 14</option>
+          <option value="15">DB 15</option>
+        </select>
         <input type="submit" value="执行" onclick="command()" />
       </form>
     </div>
